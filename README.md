@@ -40,9 +40,9 @@ As per the rubric, server state and UI state are strictly separated:
    ```
 3. Create a `.env` file in the root directory and add the API Base URL:
    ```env
-   VITE_API_BASE_URL=https://your-api-url.com
+   VITE_API_BASE_URL=https://e-commas-apis-production-e0f8.up.railway.app/api-docs/
    ```
-   *(Note: Set to https://fakestoreapi.com as fallback)*
+  
 4. Start the development server:
    ```bash
    npm run dev
