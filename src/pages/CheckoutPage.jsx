@@ -7,6 +7,24 @@ import { Button } from '../components/Button';
 import { formatCurrency } from '../utils/formatCurrency';
 import { LoadingSpinner } from '../components/LoadingStates';
 
+const InputField = ({ label, name, value, onChange, type = "text", required = true, placeholder }) => (
+  <div>
+    <label htmlFor={name} className="block text-sm font-medium text-secondary-700 mb-1">
+      {label}
+    </label>
+    <input
+      type={type}
+      id={name}
+      name={name}
+      required={required}
+      placeholder={placeholder}
+      value={value}
+      onChange={onChange}
+      className="block w-full border-secondary-300 rounded-lg shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm px-4 py-2.5 border"
+    />
+  </div>
+);
+
 export const CheckoutPage = () => {
   const navigate = useNavigate();
   const { data: cartData, isLoading: cartLoading } = useCart();
@@ -67,23 +85,6 @@ export const CheckoutPage = () => {
     );
   }
 
-  const InputField = ({ label, name, type = "text", required = true, placeholder }) => (
-    <div>
-      <label htmlFor={name} className="block text-sm font-medium text-secondary-700 mb-1">
-        {label}
-      </label>
-      <input
-        type={type}
-        id={name}
-        name={name}
-        required={required}
-        placeholder={placeholder}
-        value={formData[name]}
-        onChange={handleInputChange}
-        className="block w-full border-secondary-300 rounded-lg shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm px-4 py-2.5 border"
-      />
-    </div>
-  );
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -105,10 +106,10 @@ export const CheckoutPage = () => {
             <section>
               <h2 className="text-xl font-bold text-secondary-900 mb-4 pb-2 border-b border-secondary-100">Contact Information</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <InputField label="First Name" name="firstName" />
-                <InputField label="Last Name" name="lastName" />
+                <InputField label="First Name" name="firstName" value={formData.firstName} onChange={handleInputChange} />
+                <InputField label="Last Name" name="lastName" value={formData.lastName} onChange={handleInputChange} />
                 <div className="sm:col-span-2">
-                  <InputField label="Email Address" name="email" type="email" />
+                  <InputField label="Email Address" name="email" type="email" value={formData.email} onChange={handleInputChange} />
                 </div>
               </div>
             </section>
@@ -118,10 +119,10 @@ export const CheckoutPage = () => {
               <h2 className="text-xl font-bold text-secondary-900 mb-4 pb-2 border-b border-secondary-100">Shipping Address</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
-                  <InputField label="Street Address" name="address" />
+                  <InputField label="Street Address" name="address" value={formData.address} onChange={handleInputChange} />
                 </div>
-                <InputField label="City" name="city" />
-                <InputField label="ZIP / Postal Code" name="zipCode" />
+                <InputField label="City" name="city" value={formData.city} onChange={handleInputChange} />
+                <InputField label="ZIP / Postal Code" name="zipCode" value={formData.zipCode} onChange={handleInputChange} />
               </div>
             </section>
 
@@ -137,10 +138,10 @@ export const CheckoutPage = () => {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
-                  <InputField label="Card Number" name="cardNumber" placeholder="0000 0000 0000 0000" required={false} />
+                  <InputField label="Card Number" name="cardNumber" placeholder="0000 0000 0000 0000" required={false} value={formData.cardNumber} onChange={handleInputChange} />
                 </div>
-                <InputField label="Expiry Date" name="expiryDate" placeholder="MM/YY" required={false} />
-                <InputField label="CVV" name="cvv" placeholder="123" required={false} />
+                <InputField label="Expiry Date" name="expiryDate" placeholder="MM/YY" required={false} value={formData.expiryDate} onChange={handleInputChange} />
+                <InputField label="CVV" name="cvv" placeholder="123" required={false} value={formData.cvv} onChange={handleInputChange} />
               </div>
             </section>
 
@@ -150,7 +151,7 @@ export const CheckoutPage = () => {
               className="w-full text-lg h-14"
               isLoading={placeOrderMutation.isPending}
             >
-              <FiLock className="w-5 h-5 mr-2" /> Place Order — {formatCurrency(total)}
+              <FiLock className="w-5 h-5 mr-2" /> Place Order - {formatCurrency(total)}
             </Button>
           </form>
         </div>

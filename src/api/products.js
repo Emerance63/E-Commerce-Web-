@@ -36,7 +36,7 @@ const normalizeProduct = (product) => {
 export const fetchProducts = async ({ category, limit, sort, page, search } = {}) => {
   const url = '/products';
   const params = {
-    limit: limit || 12,
+    limit: limit || 24,
     page: page || 1,
   };
   
@@ -60,7 +60,7 @@ export const fetchProducts = async ({ category, limit, sort, page, search } = {}
   const normalized = rawProducts.map(normalizeProduct);
   
   const total = apiData?.total || response.data?.total || normalized.length;
-  const itemsPerPage = limit || 12;
+  const itemsPerPage = limit || 24;
   const totalPages = Math.ceil(total / itemsPerPage);
 
   return {

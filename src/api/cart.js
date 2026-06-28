@@ -130,6 +130,11 @@ export const removeCartItem = async (itemId) => {
   return saveCart({ items: cart.items.filter((item) => item.id !== itemId) });
 };
 
+export const clearCart = async () => {
+  getGuestUserId();
+  return saveCart({ items: [] });
+};
+
 // --- TanStack Query Hooks ---
 
 export const useCart = () => {

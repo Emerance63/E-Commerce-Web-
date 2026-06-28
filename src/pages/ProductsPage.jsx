@@ -9,6 +9,8 @@ import { Pagination } from '../components/Pagination';
 import { SkeletonCard } from '../components/LoadingStates';
 import { ErrorState, EmptyState } from '../components/FeedbackStates';
 
+const PRODUCTS_PER_PAGE = 24;
+
 export const ProductsPage = () => {
   // --- UI State: URL Search Params ---
   const [searchParams, setSearchParams] = useSearchParams();
@@ -24,6 +26,7 @@ export const ProductsPage = () => {
   const { data, isLoading, isError, refetch, isFetching } = useProducts({ 
     category: categoryParam,
     page: pageParam,
+    limit: PRODUCTS_PER_PAGE,
     // Note: passing search to API layer. If API doesn't support it, we'll filter locally below.
   });
 
@@ -60,10 +63,9 @@ export const ProductsPage = () => {
 
   // Local Pagination (if API doesn't support it natively and returns full array)
   if (Array.isArray(data) && !data.totalPages) {
-    const ITEMS_PER_PAGE = 12;
-    totalPages = Math.ceil(products.length / ITEMS_PER_PAGE);
-    const startIndex = (pageParam - 1) * ITEMS_PER_PAGE;
-    products = products.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+    totalPages = Math.ceil(products.length / PRODUCTS_PER_PAGE);
+    const startIndex = (pageParam - 1) * PRODUCTS_PER_PAGE;
+    products = products.slice(startIndex, startIndex + PRODUCTS_PER_PAGE);
   }
 
   return (

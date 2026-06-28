@@ -1,31 +1,49 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { client } from './client';
 import toast from 'react-hot-toast';
 
 import { getGuestUserId } from './client';
+import { clearCart } from './cart';
+
+const ORDERS_STORAGE_KEY = 'ecomus_orders';
+
+const readSavedOrders = () => {
+  try {
+    const userId = getGuestUserId();
+    const savedOrders = JSON.parse(localStorage.getItem(ORDERS_STORAGE_KEY) || '[]');
+    return savedOrders.filter((order) => order.userId === userId);
+  } catch {
+    return [];
+  }
+};
+
+const saveOrders = (orders) => {
+  localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
+  return orders;
+};
 
 // --- API Functions ---
 
 export const fetchOrders = async () => {
-  const userId = getGuestUserId();
-  const response = await client.get('/orders', {
-    params: { userId }
-  });
-  return response.data?.data || response.data;
+  return readSavedOrders();
 };
 
 export const fetchOrderById = async (id) => {
-  const response = await client.get(`/orders/${id}`);
-  return response.data?.data || response.data;
+  return readSavedOrders().find((order) => String(order.id) === String(id)) || null;
 };
 
 export const placeOrder = async (orderData) => {
   const userId = getGuestUserId();
-  const response = await client.post('/orders', {
+  const savedOrders = JSON.parse(localStorage.getItem(ORDERS_STORAGE_KEY) || '[]');
+  const order = {
     ...orderData,
-    userId
-  });
-  return response.data;
+    id: Date.now().toString(),
+    userId,
+    status: 'confirmed',
+    date: orderData.date || new Date().toISOString(),
+  };
+
+  saveOrders([order, ...savedOrders]);
+  return order;
 };
 
 // --- TanStack Query Hooks ---
@@ -50,10 +68,10 @@ export const usePlaceOrder = () => {
 
   return useMutation({
     mutationFn: placeOrder,
-    onSuccess: () => {
-      // Clear the cart when order is placed successfully
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
-      // Invalidate orders list so the new order shows up
+    onSuccess: async (order) => {
+      const emptyCart = await clearCart();
+      queryClient.setQueryData(['cart'], emptyCart);
+      queryClient.setQueryData(['order', String(order.id)], order);
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       toast.success('Order placed successfully!');
     },
