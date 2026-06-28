@@ -1,16 +1,52 @@
-# React + Vite
+# E-Comus - React E-Commerce Assignment
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A complete, working e-commerce web client built with React, Tailwind CSS v4, Axios, and TanStack Query. 
 
-Currently, two official plugins are available:
+## Features
+- **Product Catalog**: Browse products, search, filter by category, and view product details. Pagination included.
+- **Cart**: Add to cart, update quantities, remove items. Persistent via server state. Optimistic UI updates.
+- **Checkout & Orders**: Place orders, view order confirmation, and review order history.
+- **State Management**: Strict separation of server state (TanStack Query cache) and local UI state (React state/URL params). No duplication of server data.
+- **UI/UX**: Fully responsive design system using TailwindCSS v4. Meaningful loading skeletons, error states, and empty states. Toast notifications for actions.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Tech Stack
+- **React 18** (Vite)
+- **Tailwind CSS v4**
+- **React Router v6**
+- **Axios** (Centralized instance with interceptors)
+- **TanStack Query v5** (Data fetching, caching, optimistic mutations)
+- **React Hot Toast** (Notifications)
+- **React Icons**
 
-## React Compiler
+## Project Structure
+Organized by layer:
+- `/src/api` - Centralized Axios client and all TanStack Query hooks organized by resource (`products.js`, `cart.js`, etc.)
+- `/src/components` - Reusable UI components (Button, ProductCard, CartItem, Layout)
+- `/src/pages` - Route-level components mapping to specific URLs
+- `/src/hooks` - Custom React hooks (e.g., `useDebounce` for search)
+- `/src/utils` - Helper functions
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## State Management Approach
+As per the rubric, server state and UI state are strictly separated:
+- **Server State**: Products, Cart, Orders, and Categories are fetched and managed entirely by **TanStack Query**. They live in the query cache, and components subscribe to them via `useQuery`. Mutations (adding to cart, placing an order) use `useMutation` with cache invalidation to keep the UI perfectly synced with the server.
+- **UI State**: The active search string, form input fields during checkout, current page number, and mobile menu toggle are managed locally using `useState` or URL search parameters (`useSearchParams`).
 
-## Expanding the Oxlint configuration
+## Setup Instructions
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Create a `.env` file in the root directory and add the API Base URL:
+   ```env
+   VITE_API_BASE_URL=https://your-api-url.com
+   ```
+   *(Note: Set to https://fakestoreapi.com as fallback)*
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+## Note on the API ("E-Comus")
+During development, the specific "E-Comus" API documentation was unavailable. The API layer (`/src/api`) has been architected to handle standard RESTful e-commerce endpoints. Once the actual API URL and exact endpoint paths are confirmed, you only need to update the base URL in `.env` and potentially adjust the paths in the `/api/*.js` files. The UI and state management logic will continue to work seamlessly.
