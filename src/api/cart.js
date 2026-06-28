@@ -2,31 +2,47 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { client } from './client';
 import toast from 'react-hot-toast';
 
+import { getGuestUserId } from './client';
+
 // --- API Functions ---
 
 // Fetch the current user's cart
 export const fetchCart = async () => {
-  // Assuming a standard endpoint for getting cart items
-  // Depending on the API, this might need a user ID or token
-  const response = await client.get('/cart');
-  return response.data;
+  const userId = getGuestUserId();
+  const response = await client.get('/cart', {
+    params: { userId }
+  });
+  return response.data?.data?.cart || { items: [], total: 0, itemCount: 0 };
 };
 
 // Add item to cart
-export const addToCart = async ({ productId, quantity }) => {
-  const response = await client.post('/cart', { productId, quantity });
+export const addToCart = async ({ productId, quantity, variantId }) => {
+  const userId = getGuestUserId();
+  const response = await client.post('/cart/items', { 
+    productId, 
+    variantId: variantId || 'default', 
+    quantity: quantity || 1,
+    userId 
+  });
   return response.data;
 };
 
 // Update item quantity
 export const updateCartItem = async ({ itemId, quantity }) => {
-  const response = await client.put(`/cart/${itemId}`, { quantity });
+  const userId = getGuestUserId();
+  const response = await client.patch(`/cart/items/${itemId}`, { 
+    quantity,
+    userId 
+  });
   return response.data;
 };
 
 // Remove item from cart
 export const removeCartItem = async (itemId) => {
-  const response = await client.delete(`/cart/${itemId}`);
+  const userId = getGuestUserId();
+  const response = await client.delete(`/cart/items/${itemId}`, {
+    params: { userId }
+  });
   return response.data;
 };
 

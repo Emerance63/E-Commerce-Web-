@@ -2,20 +2,29 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { client } from './client';
 import toast from 'react-hot-toast';
 
+import { getGuestUserId } from './client';
+
 // --- API Functions ---
 
 export const fetchOrders = async () => {
-  const response = await client.get('/orders');
-  return response.data;
+  const userId = getGuestUserId();
+  const response = await client.get('/orders', {
+    params: { userId }
+  });
+  return response.data?.data || response.data;
 };
 
 export const fetchOrderById = async (id) => {
   const response = await client.get(`/orders/${id}`);
-  return response.data;
+  return response.data?.data || response.data;
 };
 
 export const placeOrder = async (orderData) => {
-  const response = await client.post('/orders', orderData);
+  const userId = getGuestUserId();
+  const response = await client.post('/orders', {
+    ...orderData,
+    userId
+  });
   return response.data;
 };
 

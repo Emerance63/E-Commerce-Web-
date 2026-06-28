@@ -37,3 +37,15 @@ client.interceptors.response.use(
     return Promise.reject(new Error(errorMessage));
   }
 );
+
+// Helper to get or create a persistent guest user ID stored in localStorage
+export const getGuestUserId = () => {
+  let userId = localStorage.getItem('guest_user_id');
+  if (!userId) {
+    // Generate a simple guest user ID
+    userId = 'guest_' + Math.random().toString(36).substring(2, 11);
+    localStorage.setItem('guest_user_id', userId);
+  }
+  return userId;
+};
+
