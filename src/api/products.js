@@ -1,6 +1,22 @@
 import { useQuery } from '@tanstack/react-query';
 import { client } from './client';
 
+export const FASHION_CATEGORY_ID = '6a41247952deb9cfee038765';
+export const ELECTRONICS_CATEGORY_ID = '6a40217b52deb9cfee038763';
+
+const CATEGORY_NAMES = {
+  [FASHION_CATEGORY_ID]: 'Fashion',
+  [ELECTRONICS_CATEGORY_ID]: 'Electronics',
+};
+
+// Products miscategorized under Electronics on the API — treat as Fashion
+const CATEGORY_PRODUCT_OVERRIDES = {
+  [FASHION_CATEGORY_ID]: [
+    '6a41247e52deb9cfee038768', // Classic Leather Jacket
+    '6a41248052deb9cfee038769', // Minimalist Analog Watch
+  ],
+};
+
 // Curated product images keyed by product name (lowercase)
 const PRODUCT_IMAGE_MAP = {
   'sony wh-1000xm4 wireless headphones': 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&h=500&fit=crop',
@@ -9,69 +25,124 @@ const PRODUCT_IMAGE_MAP = {
   'minimalist analog watch': 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&h=500&fit=crop',
 };
 
-// Generate a deterministic fallback image from the product id
 const getFallbackImage = (product) => {
   const name = (product.name || product.title || '').toLowerCase();
   if (PRODUCT_IMAGE_MAP[name]) return PRODUCT_IMAGE_MAP[name];
-  // Use picsum with a seed derived from the product id for consistent, unique images
   const seed = product.id || product._id || Math.random().toString(36).slice(2);
   return `https://picsum.photos/seed/${seed}/500/500`;
 };
 
-// Helper to normalize Ecomus API products to FakeStoreAPI style used by the UI
-const normalizeProduct = (product) => {
-  if (!product) return null;
-  const apiImage = product.images?.[0]?.url;
+const extractProducts = (response) => {
+  const apiData = response.data?.data;
+  if (Array.isArray(response.data)) return response.data;
+  if (Array.isArray(apiData)) return apiData;
+  return apiData?.all || response.data?.results || [];
+};
+
+const getOverrideCategoryId = (productId) => {
+  for (const [categoryId, productIds] of Object.entries(CATEGORY_PRODUCT_OVERRIDES)) {
+    if (productIds.includes(productId)) return categoryId;
+  }
+  return null;
+};
+
+const applyCategoryOverride = (product) => {
+  const overrideCategoryId = getOverrideCategoryId(product.id);
+  if (!overrideCategoryId || product.categoryId === overrideCategoryId) return product;
+
   return {
     ...product,
-    title: product.name || product.title,
-    image: apiImage || getFallbackImage(product),
-    category: typeof product.category === 'object' ? product.category?.name : product.category,
-    rating: product.rating || { rate: 4.5, count: 12 }, // Fallback rating for display
+    categoryId: overrideCategoryId,
+    category: {
+      id: overrideCategoryId,
+      name: CATEGORY_NAMES[overrideCategoryId] || product.category?.name,
+    },
   };
+};
+
+const normalizeProduct = (product) => {
+  if (!product) return null;
+  const withCategory = applyCategoryOverride(product);
+  const apiImage = withCategory.images?.[0]?.url;
+  return {
+    ...withCategory,
+    title: withCategory.name || withCategory.title,
+    image: apiImage || getFallbackImage(withCategory),
+    category: typeof withCategory.category === 'object'
+      ? withCategory.category?.name
+      : withCategory.category,
+    rating: withCategory.rating || { rate: 4.5, count: 12 },
+  };
+};
+
+const filterByCategory = (products, category) => {
+  const overrideIds = CATEGORY_PRODUCT_OVERRIDES[category] || [];
+  return products.filter(
+    (product) => product.categoryId === category || overrideIds.includes(product.id)
+  );
+};
+
+const paginate = (items, page, limit) => {
+  const start = (page - 1) * limit;
+  return items.slice(start, start + limit);
 };
 
 // --- API Functions ---
 
 export const fetchProducts = async ({ category, limit, sort, page, search } = {}) => {
-  const url = '/products';
+  const pageLimit = limit || 24;
+  const currentPage = page || 1;
+  const overrideIds = category ? (CATEGORY_PRODUCT_OVERRIDES[category] || []) : [];
+  const needsClientCategoryFilter = category && overrideIds.length > 0;
+
   const params = {
-    limit: limit || 24,
-    page: page || 1,
+    limit: needsClientCategoryFilter ? 100 : pageLimit,
+    page: needsClientCategoryFilter ? 1 : currentPage,
   };
-  
-  if (category) {
+
+  if (category && !needsClientCategoryFilter) {
     params.categoryId = category;
   }
-  
+
   if (search) {
     params.search = search;
   }
 
-  const response = await client.get(url, { params });
-  
-  // Ecomus API: { success, data: { all: [...], grouped: {...}, pagination: { page, limit, total, pages } } }
+  const response = await client.get('/products', { params });
+  let rawProducts = extractProducts(response);
+
+  if (category) {
+    rawProducts = filterByCategory(rawProducts, category);
+
+    if (needsClientCategoryFilter) {
+      const total = rawProducts.length;
+      const totalPages = Math.max(1, Math.ceil(total / pageLimit));
+      rawProducts = paginate(rawProducts, currentPage, pageLimit);
+
+      return {
+        results: rawProducts.map(normalizeProduct),
+        totalPages,
+        currentPage,
+        total,
+      };
+    }
+  }
+
   const apiData = response.data?.data;
   const pagination = apiData?.pagination || response.data?.pagination;
-  const rawProducts = Array.isArray(response.data) 
-    ? response.data 
-    : (apiData?.all || response.data?.results || []);
-  
   const normalized = rawProducts.map(normalizeProduct);
-  
-  const totalPages = pagination?.pages || Math.ceil((pagination?.total || normalized.length) / (limit || 24));
+  const totalPages = pagination?.pages || Math.ceil((pagination?.total || normalized.length) / pageLimit);
 
   return {
     results: normalized,
     totalPages,
-    currentPage: pagination?.page || page || 1,
+    currentPage: pagination?.page || currentPage,
     total: pagination?.total || normalized.length,
   };
 };
 
 export const fetchProductById = async (id) => {
   const response = await client.get(`/products/${id}`);
-  // API returns { success: true, data: { product: {...} } }
   const productData = response.data?.data?.product || response.data?.data || response.data;
   return normalizeProduct(productData);
 };
@@ -89,7 +160,6 @@ export const useProduct = (id) => {
   return useQuery({
     queryKey: ['product', id],
     queryFn: () => fetchProductById(id),
-    enabled: !!id, // Only run the query if an ID is provided
+    enabled: !!id,
   });
 };
-

@@ -34,7 +34,7 @@ export const HomePage = () => {
               Shop Now <FiArrowRight className="ml-2 -mr-1 w-5 h-5" />
             </Link>
             <Link 
-              to="/categories" 
+              to="/products" 
               className="inline-flex items-center justify-center px-8 py-3.5 border border-primary-300 text-base font-medium rounded-lg text-white hover:bg-primary-800 transition-colors"
             >
               Browse Categories

@@ -3,6 +3,7 @@ import { client } from './client';
 import toast from 'react-hot-toast';
 
 import { getGuestUserId } from './client';
+import { fetchProductById } from './products';
 
 const CART_STORAGE_KEY = 'ecomus_cart';
 
@@ -66,11 +67,7 @@ const saveCart = (cart) => {
   return calculatedCart;
 };
 
-const fetchProductSnapshot = async (productId) => {
-  const response = await client.get(`/products/${productId}`);
-  const productData = response.data?.data?.product || response.data?.data || response.data;
-  return normalizeProduct(productData);
-};
+const fetchProductSnapshot = async (productId) => fetchProductById(productId);
 
 // --- API Functions ---
 
