@@ -3,10 +3,15 @@ import { Link, NavLink, Outlet } from 'react-router-dom';
 import { FiShoppingCart, FiMenu, FiX, FiUser } from 'react-icons/fi';
 import { Toaster } from 'react-hot-toast';
 import { useCart } from '../api/cart';
+import { ensureUser } from '../api/auth';
 
 export const Layout = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const { data: cartData } = useCart();
+
+  React.useEffect(() => {
+    ensureUser().catch(console.error);
+  }, []);
   
   const items = Array.isArray(cartData) ? cartData : (cartData?.items || []);
   const cartItemCount = items.reduce((total, item) => total + (item.quantity || 1), 0); 

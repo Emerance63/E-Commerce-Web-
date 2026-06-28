@@ -41,8 +41,16 @@ export const OrderConfirmationPage = () => {
               </div>
               <div className="flex justify-between items-center mb-2">
                 <span className="text-secondary-600">Date</span>
-                <span className="text-secondary-900">{new Date().toLocaleDateString()}</span>
+                <span className="text-secondary-900">
+                  {order.date ? new Date(order.date).toLocaleDateString() : new Date().toLocaleDateString()}
+                </span>
               </div>
+              {order.status && (
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-secondary-600">Status</span>
+                  <span className="text-secondary-900 font-medium">{order.status}</span>
+                </div>
+              )}
               <div className="flex justify-between items-center">
                 <span className="text-secondary-600">Email</span>
                 <span className="text-secondary-900">{order.email || 'customer@example.com'}</span>

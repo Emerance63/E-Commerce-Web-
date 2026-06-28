@@ -1,51 +1,37 @@
 import axios from 'axios';
+import { getStoredToken } from './auth';
 
-// Create a centralized Axios instance
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+  || 'https://e-commas-apis-production-e0f8.up.railway.app/api';
+
 export const client = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://fakestoreapi.com',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request Interceptor: Attach auth token if needed in the future
 client.interceptors.request.use(
   (config) => {
-    // const token = localStorage.getItem('token');
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`;
-    // }
+    const token = getStoredToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor: Global error handling
 client.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Handle 401 Unauthorized globally (e.g., redirect to login)
     if (error.response?.status === 401) {
-      console.error('Unauthorized access. Redirecting to login...');
-      // window.location.href = '/login';
+      console.error('Unauthorized access.');
     }
-    
-    // Provide a standardized error message to the UI
+
     const errorMessage = error.response?.data?.message || error.message || 'An unexpected error occurred';
     console.error(`API Error: ${errorMessage}`);
-    
+
     return Promise.reject(new Error(errorMessage));
   }
 );
-
-// Helper to get or create a persistent guest user ID stored in localStorage
-export const getGuestUserId = () => {
-  let userId = localStorage.getItem('guest_user_id');
-  if (!userId) {
-    // Generate a simple guest user ID
-    userId = 'guest_' + Math.random().toString(36).substring(2, 11);
-    localStorage.setItem('guest_user_id', userId);
-  }
-  return userId;
-};
-

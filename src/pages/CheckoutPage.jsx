@@ -55,22 +55,12 @@ export const CheckoutPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    // In a real app, you would send payment info to Stripe/Braintree here
-    // For this assignment, we submit the order to the mock API
-    const orderData = {
-      ...formData,
-      items,
-      total,
-      date: new Date().toISOString(),
-    };
 
-    placeOrderMutation.mutate(orderData, {
+    placeOrderMutation.mutate(undefined, {
       onSuccess: (response) => {
-        // Redirect to confirmation page. If API doesn't return ID, mock one.
-        const orderId = response?.id || Math.floor(Math.random() * 1000000);
+        const orderId = response?.id;
         navigate(`/orders/${orderId}`, { replace: true });
-      }
+      },
     });
   };
 
@@ -134,7 +124,7 @@ export const CheckoutPage = () => {
               </div>
               <div className="bg-secondary-50 p-4 rounded-lg mb-4 text-sm text-secondary-600 flex items-start">
                 <FiCheckCircle className="text-emerald-500 mt-0.5 mr-2 shrink-0" />
-                This is a mock checkout. Do not enter real credit card information. You can use fake data or leave payment fields blank if not required by your API.
+                This is a demo checkout. Payment fields are not processed — your order is placed through the E-Comus API.
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">

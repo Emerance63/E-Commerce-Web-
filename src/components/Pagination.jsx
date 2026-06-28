@@ -1,7 +1,13 @@
 import React from 'react';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
-export const Pagination = ({ currentPage, totalPages, onPageChange }) => {
+export const Pagination = ({
+  currentPage,
+  totalPages,
+  onPageChange,
+  disablePrev = false,
+  disableNext = false,
+}) => {
   if (totalPages <= 1) return null;
 
   // Build page numbers to show — always show first, last, and neighbors of current
@@ -36,7 +42,7 @@ export const Pagination = ({ currentPage, totalPages, onPageChange }) => {
       {/* Previous */}
       <button
         onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage === 1}
+        disabled={currentPage === 1 || disablePrev}
         className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium text-secondary-600 hover:bg-secondary-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         aria-label="Previous page"
       >
@@ -72,7 +78,7 @@ export const Pagination = ({ currentPage, totalPages, onPageChange }) => {
       {/* Next */}
       <button
         onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
+        disabled={currentPage === totalPages || disableNext}
         className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium text-secondary-600 hover:bg-secondary-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         aria-label="Next page"
       >

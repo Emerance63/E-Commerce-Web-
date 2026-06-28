@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { client } from './client';
 
 export const FASHION_CATEGORY_ID = '6a41247952deb9cfee038765';
@@ -64,6 +64,9 @@ const normalizeProduct = (product) => {
   if (!product) return null;
   const withCategory = applyCategoryOverride(product);
   const apiImage = withCategory.images?.[0]?.url;
+  const commentCount = withCategory.comments?.length ?? 0;
+  const avgRating = withCategory.avgRating;
+
   return {
     ...withCategory,
     title: withCategory.name || withCategory.title,
@@ -71,7 +74,10 @@ const normalizeProduct = (product) => {
     category: typeof withCategory.category === 'object'
       ? withCategory.category?.name
       : withCategory.category,
-    rating: withCategory.rating || { rate: 4.5, count: 12 },
+    variants: withCategory.variants || [],
+    rating: withCategory.rating || (avgRating != null
+      ? { rate: avgRating, count: commentCount }
+      : { rate: 4.5, count: commentCount || 12 }),
   };
 };
 
@@ -153,6 +159,20 @@ export const useProducts = (filters = {}) => {
   return useQuery({
     queryKey: ['products', filters],
     queryFn: () => fetchProducts(filters),
+  });
+};
+
+export const useInfiniteProducts = (filters = {}) => {
+  return useInfiniteQuery({
+    queryKey: ['products', 'infinite', filters],
+    queryFn: ({ pageParam = 1 }) => fetchProducts({ ...filters, page: pageParam }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      if (lastPage.currentPage < lastPage.totalPages) {
+        return lastPage.currentPage + 1;
+      }
+      return undefined;
+    },
   });
 };
 

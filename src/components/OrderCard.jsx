@@ -5,10 +5,11 @@ import { formatCurrency } from '../utils/formatCurrency';
 export const OrderCard = ({ order }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Fallback data structure handling since API shape is unknown
-  const orderDate = order.date ? new Date(order.date).toLocaleDateString() : 'Unknown Date';
-  const orderTotal = order.total || order.items?.reduce((sum, item) => sum + (item.price * item.quantity), 0) || 0;
-  const items = order.items || order.products || [];
+  const orderDate = order.date || order.createdAt
+    ? new Date(order.date || order.createdAt).toLocaleDateString()
+    : 'Unknown Date';
+  const orderTotal = order.total ?? 0;
+  const items = order.items || [];
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-secondary-200 overflow-hidden mb-6">
@@ -21,8 +22,11 @@ export const OrderCard = ({ order }) => {
             <FiPackage className="w-6 h-6 text-primary-600" />
           </div>
           <div>
-            <h3 className="text-secondary-900 font-semibold">Order #{order.id}</h3>
+            <h3 className="text-secondary-900 font-semibold">Order #{order.id?.slice(-8)}</h3>
             <p className="text-sm text-secondary-500">{orderDate}</p>
+            {order.status && (
+              <span className="text-xs font-medium text-primary-600 uppercase">{order.status}</span>
+            )}
           </div>
         </div>
         
@@ -54,12 +58,14 @@ export const OrderCard = ({ order }) => {
                       className="w-12 h-12 object-contain bg-secondary-50 rounded"
                     />
                     <div>
-                      <p className="text-sm font-medium text-secondary-900 line-clamp-1">{product.title}</p>
+                      <p className="text-sm font-medium text-secondary-900 line-clamp-1">
+                        {product.title || product.name}
+                      </p>
                       <p className="text-xs text-secondary-500">Qty: {quantity}</p>
                     </div>
                   </div>
                   <p className="text-sm font-medium text-secondary-900 shrink-0 ml-4">
-                    {formatCurrency(product.price * quantity)}
+                    {formatCurrency((product.price || item.price || 0) * quantity)}
                   </p>
                 </li>
               );

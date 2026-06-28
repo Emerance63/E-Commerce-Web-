@@ -5,7 +5,7 @@ import { Button } from './Button';
 import { formatCurrency } from '../utils/formatCurrency';
 import { useAddToCart } from '../api/cart';
 
-export const ProductCard = ({ product }) => {
+export const ProductCard = ({ product, animate = false, animationDelay = 0 }) => {
   const addToCartMutation = useAddToCart();
 
   const handleAddToCart = (e) => {
@@ -17,7 +17,10 @@ export const ProductCard = ({ product }) => {
   return (
     <Link 
       to={`/products/${product.id}`}
-      className="group flex flex-col bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 border border-secondary-100 overflow-hidden"
+      className={`group flex flex-col bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 border border-secondary-100 overflow-hidden ${
+        animate ? 'product-feed-enter' : ''
+      }`}
+      style={animate ? { animationDelay: `${animationDelay}ms` } : undefined}
     >
       {/* Product Image */}
       <div className="relative aspect-square p-6 bg-white flex items-center justify-center overflow-hidden">

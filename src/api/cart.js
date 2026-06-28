@@ -1,135 +1,95 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { client } from './client';
 import toast from 'react-hot-toast';
 
-import { getGuestUserId } from './client';
-import { fetchProductById } from './products';
+import { client } from './client';
+import { ensureUser } from './auth';
+import { ensureVariantForProduct } from './variants';
 
-const CART_STORAGE_KEY = 'ecomus_cart';
+const normalizeCartItem = (item) => {
+  const variant = item.variant;
+  const variantImage = variant?.images?.[0]?.url;
 
-const normalizeProduct = (product) => {
-  if (!product) return null;
-
-  const apiImage = product.images?.[0]?.url;
+  const product = {
+    id: item.productId,
+    title: item.productName,
+    name: item.productName,
+    price: Number(item.unitPrice ?? variant?.price ?? 0),
+    category: item.category,
+    image: variantImage,
+    thumbnail: variantImage,
+  };
 
   return {
-    ...product,
-    id: product.id || product._id,
-    title: product.title || product.name,
-    image: product.image || apiImage || product.thumbnail,
-    category: typeof product.category === 'object' ? product.category?.name : product.category,
-    price: Number(product.price || 0),
+    id: item.id,
+    productId: item.productId,
+    variantId: variant?.id,
+    quantity: item.quantity,
+    product,
+    lineTotal: Number(item.subtotal ?? product.price * item.quantity),
   };
 };
 
-const getProductId = (product) => product?.id || product?._id;
-
-const calculateCart = (items = []) => {
-  const normalizedItems = items
-    .filter((item) => item && (item.product || item.id || item.productId))
-    .map((item) => {
-      const product = normalizeProduct(item.product || item);
-      const quantity = Math.max(1, Number(item.quantity || 1));
-
-      return {
-        ...item,
-        id: item.id || `${item.variantId || 'default'}:${getProductId(product) || item.productId}`,
-        productId: item.productId || getProductId(product),
-        product,
-        quantity,
-        lineTotal: (product?.price || 0) * quantity,
-      };
-    });
-
-  const total = normalizedItems.reduce((sum, item) => sum + item.lineTotal, 0);
-  const itemCount = normalizedItems.reduce((sum, item) => sum + item.quantity, 0);
+export const normalizeCart = (cart) => {
+  const items = (cart?.items || []).map(normalizeCartItem);
+  const total = Number(cart?.total ?? 0);
+  const itemCount = Number(cart?.itemCount ?? items.reduce((sum, i) => sum + i.quantity, 0));
 
   return {
-    items: normalizedItems,
+    items,
     subtotal: total,
     total,
     itemCount,
   };
 };
 
-const readSavedCart = () => {
-  try {
-    const savedCart = localStorage.getItem(CART_STORAGE_KEY);
-    return savedCart ? calculateCart(JSON.parse(savedCart).items || []) : calculateCart([]);
-  } catch {
-    return calculateCart([]);
-  }
-};
-
-const saveCart = (cart) => {
-  const calculatedCart = calculateCart(cart.items || []);
-  localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(calculatedCart));
-  return calculatedCart;
-};
-
-const fetchProductSnapshot = async (productId) => fetchProductById(productId);
+const emptyCart = () => normalizeCart({ items: [], total: 0, itemCount: 0 });
 
 // --- API Functions ---
 
-// Fetch the current user's cart
 export const fetchCart = async () => {
-  getGuestUserId();
-  return readSavedCart();
+  const userId = await ensureUser();
+  const response = await client.get('/cart', { params: { userId } });
+  const cart = response.data?.data?.cart;
+  return cart ? normalizeCart(cart) : emptyCart();
 };
 
-// Add item to cart
-export const addToCart = async ({ productId, product, quantity, variantId }) => {
-  getGuestUserId();
+export const addToCart = async ({ productId, quantity, variantId }) => {
+  const userId = await ensureUser();
+  const resolvedVariantId = variantId || await ensureVariantForProduct(productId);
 
-  const productSnapshot = normalizeProduct(product) || await fetchProductSnapshot(productId);
-  const resolvedProductId = productId || getProductId(productSnapshot);
-  const resolvedVariantId = variantId || 'default';
-  const itemId = `${resolvedVariantId}:${resolvedProductId}`;
-  const cart = readSavedCart();
-  const requestedQuantity = Math.max(1, Number(quantity || 1));
-  const existingItem = cart.items.find((item) => item.id === itemId);
+  const response = await client.post('/cart/items', {
+    userId,
+    productId,
+    variantId: resolvedVariantId,
+    quantity: Math.max(1, Number(quantity || 1)),
+  });
 
-  const items = existingItem
-    ? cart.items.map((item) => (
-        item.id === itemId
-          ? { ...item, quantity: item.quantity + requestedQuantity }
-          : item
-      ))
-    : [
-        ...cart.items,
-        {
-          id: itemId,
-          productId: resolvedProductId,
-          variantId: resolvedVariantId,
-          quantity: requestedQuantity,
-          product: productSnapshot,
-        },
-      ];
-
-  return saveCart({ items });
+  return normalizeCart(response.data?.data?.cart);
 };
 
-// Update item quantity
 export const updateCartItem = async ({ itemId, quantity }) => {
-  getGuestUserId();
-  const cart = readSavedCart();
-  const nextQuantity = Math.max(1, Number(quantity || 1));
-  const items = cart.items.map((item) => (
-    item.id === itemId ? { ...item, quantity: nextQuantity } : item
-  ));
-  return saveCart({ items });
+  const userId = await ensureUser();
+  const response = await client.patch(`/cart/items/${itemId}`, {
+    userId,
+    quantity: Math.max(1, Number(quantity || 1)),
+  });
+
+  return normalizeCart(response.data?.data?.cart);
 };
 
-// Remove item from cart
 export const removeCartItem = async (itemId) => {
-  getGuestUserId();
-  const cart = readSavedCart();
-  return saveCart({ items: cart.items.filter((item) => item.id !== itemId) });
+  const userId = await ensureUser();
+  const response = await client.delete(`/cart/items/${itemId}`, {
+    params: { userId },
+  });
+
+  return normalizeCart(response.data?.data?.cart);
 };
 
 export const clearCart = async () => {
-  getGuestUserId();
-  return saveCart({ items: [] });
+  const userId = await ensureUser();
+  await client.delete('/cart', { params: { userId } });
+  return emptyCart();
 };
 
 // --- TanStack Query Hooks ---
@@ -138,7 +98,6 @@ export const useCart = () => {
   return useQuery({
     queryKey: ['cart'],
     queryFn: fetchCart,
-    staleTime: Infinity,
   });
 };
 
@@ -168,11 +127,20 @@ export const useUpdateCartItem = () => {
 
       if (previousCart) {
         queryClient.setQueryData(['cart'], (old) => {
-          const items = Array.isArray(old) ? old : (old.items || []);
-          const updatedItems = items.map(item =>
-            item.id === itemId ? { ...item, quantity } : item
+          if (!old?.items) return old;
+          const updatedItems = old.items.map((item) =>
+            item.id === itemId
+              ? { ...item, quantity, lineTotal: (item.product?.price || 0) * quantity }
+              : item
           );
-          return Array.isArray(old) ? updatedItems : calculateCart(updatedItems);
+          const total = updatedItems.reduce((sum, i) => sum + i.lineTotal, 0);
+          return {
+            ...old,
+            items: updatedItems,
+            total,
+            subtotal: total,
+            itemCount: updatedItems.reduce((sum, i) => sum + i.quantity, 0),
+          };
         });
       }
 
@@ -181,7 +149,7 @@ export const useUpdateCartItem = () => {
     onSuccess: (cart) => {
       queryClient.setQueryData(['cart'], cart);
     },
-    onError: (err, newTodo, context) => {
+    onError: (_err, _vars, context) => {
       queryClient.setQueryData(['cart'], context.previousCart);
       toast.error('Failed to update quantity');
     },
@@ -199,9 +167,16 @@ export const useRemoveCartItem = () => {
 
       if (previousCart) {
         queryClient.setQueryData(['cart'], (old) => {
-          const items = Array.isArray(old) ? old : (old.items || []);
-          const updatedItems = items.filter(item => item.id !== itemId);
-          return Array.isArray(old) ? updatedItems : calculateCart(updatedItems);
+          if (!old?.items) return old;
+          const updatedItems = old.items.filter((item) => item.id !== itemId);
+          const total = updatedItems.reduce((sum, i) => sum + i.lineTotal, 0);
+          return {
+            ...old,
+            items: updatedItems,
+            total,
+            subtotal: total,
+            itemCount: updatedItems.reduce((sum, i) => sum + i.quantity, 0),
+          };
         });
       }
       return { previousCart };
@@ -210,7 +185,7 @@ export const useRemoveCartItem = () => {
       queryClient.setQueryData(['cart'], cart);
       toast.success('Item removed');
     },
-    onError: (err, variables, context) => {
+    onError: (_err, _vars, context) => {
       queryClient.setQueryData(['cart'], context.previousCart);
       toast.error('Failed to remove item');
     },

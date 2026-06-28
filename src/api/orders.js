@@ -1,49 +1,65 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 
-import { getGuestUserId } from './client';
+import { client } from './client';
+import { ensureUser, getStoredEmail } from './auth';
 import { clearCart } from './cart';
 
-const ORDERS_STORAGE_KEY = 'ecomus_orders';
+const normalizeOrderItem = (item) => {
+  const product = item.product || {};
+  const image = product.images?.[0]?.url;
 
-const readSavedOrders = () => {
-  try {
-    const userId = getGuestUserId();
-    const savedOrders = JSON.parse(localStorage.getItem(ORDERS_STORAGE_KEY) || '[]');
-    return savedOrders.filter((order) => order.userId === userId);
-  } catch {
-    return [];
-  }
+  return {
+    id: item.id,
+    productId: item.productId,
+    quantity: item.quantity,
+    price: Number(item.price ?? 0),
+    product: {
+      id: item.productId,
+      title: product.name || product.title,
+      name: product.name,
+      price: Number(item.price ?? product.price ?? 0),
+      image,
+      thumbnail: image,
+      category: product.category?.name || product.category,
+    },
+  };
 };
 
-const saveOrders = (orders) => {
-  localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
-  return orders;
+export const normalizeOrder = (order) => {
+  if (!order) return null;
+
+  return {
+    ...order,
+    id: order.id,
+    total: Number(order.total ?? 0),
+    status: order.status,
+    date: order.createdAt || order.date,
+    email: order.user?.email || getStoredEmail(),
+    items: (order.items || []).map(normalizeOrderItem),
+  };
 };
 
 // --- API Functions ---
 
 export const fetchOrders = async () => {
-  return readSavedOrders();
+  const userId = await ensureUser();
+  const response = await client.get('/orders', { params: { userId } });
+  const orders = response.data?.data || [];
+  return Array.isArray(orders) ? orders.map(normalizeOrder) : [];
 };
 
 export const fetchOrderById = async (id) => {
-  return readSavedOrders().find((order) => String(order.id) === String(id)) || null;
+  const response = await client.get(`/orders/${id}`);
+  const order = response.data?.data?.order || response.data?.data;
+  return normalizeOrder(order);
 };
 
-export const placeOrder = async (orderData) => {
-  const userId = getGuestUserId();
-  const savedOrders = JSON.parse(localStorage.getItem(ORDERS_STORAGE_KEY) || '[]');
-  const order = {
-    ...orderData,
-    id: Date.now().toString(),
-    userId,
-    status: 'confirmed',
-    date: orderData.date || new Date().toISOString(),
-  };
-
-  saveOrders([order, ...savedOrders]);
-  return order;
+export const placeOrder = async () => {
+  const userId = await ensureUser();
+  const response = await client.post('/orders', { userId });
+  const order = response.data?.data?.order || response.data?.data;
+  return normalizeOrder(order);
 };
 
 // --- TanStack Query Hooks ---
