@@ -11,7 +11,7 @@ export const ProductCard = ({ product }) => {
   const handleAddToCart = (e) => {
     e.preventDefault(); // Prevent navigating to product detail if button is clicked
     e.stopPropagation();
-    addToCartMutation.mutate({ productId: product.id, quantity: 1 });
+    addToCartMutation.mutate({ productId: product.id, product, quantity: 1 });
   };
 
   return (

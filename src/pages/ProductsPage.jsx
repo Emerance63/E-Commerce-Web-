@@ -50,10 +50,11 @@ export const ProductsPage = () => {
   let totalPages = data?.totalPages || 1; // Fallback if API provides it
 
   // Local Search Filtering (if API doesn't support it natively)
-  if (searchQuery && Array.isArray(data)) {
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
     products = products.filter(p => 
-      p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase()))
+      (p.title || p.name || '').toLowerCase().includes(q) || 
+      (p.description || '').toLowerCase().includes(q)
     );
   }
 

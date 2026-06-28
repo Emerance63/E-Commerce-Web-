@@ -30,7 +30,7 @@ export const ProductDetailPage = () => {
 
   const handleAddToCart = () => {
     addToCartMutation.mutate(
-      { productId: product.id, quantity },
+      { productId: product.id, product, quantity },
       {
         onSuccess: () => {
           setIsAdded(true);

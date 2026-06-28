@@ -71,8 +71,8 @@ export const fetchProducts = async ({ category, limit, sort, page, search } = {}
 
 export const fetchProductById = async (id) => {
   const response = await client.get(`/products/${id}`);
-  // If response.data wraps product in a data property
-  const productData = response.data?.data || response.data;
+  // API returns { success: true, data: { product: {...} } }
+  const productData = response.data?.data?.product || response.data?.data || response.data;
   return normalizeProduct(productData);
 };
 
