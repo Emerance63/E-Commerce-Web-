@@ -48,24 +48,19 @@ export const ProductsPage = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // --- Data processing (Fallback if API lacks search/pagination) ---
+  // --- Data processing ---
   let products = Array.isArray(data) ? data : data?.results || [];
-  let totalPages = data?.totalPages || 1; // Fallback if API provides it
+  let totalPages = data?.totalPages || 1;
+  let totalCount = data?.total || products.length;
 
-  // Local Search Filtering (if API doesn't support it natively)
+  // Local Search Filtering
   if (searchQuery) {
     const q = searchQuery.toLowerCase();
     products = products.filter(p => 
       (p.title || p.name || '').toLowerCase().includes(q) || 
       (p.description || '').toLowerCase().includes(q)
     );
-  }
-
-  // Local Pagination (if API doesn't support it natively and returns full array)
-  if (Array.isArray(data) && !data.totalPages) {
-    totalPages = Math.ceil(products.length / PRODUCTS_PER_PAGE);
-    const startIndex = (pageParam - 1) * PRODUCTS_PER_PAGE;
-    products = products.slice(startIndex, startIndex + PRODUCTS_PER_PAGE);
+    totalCount = products.length;
   }
 
   return (
@@ -75,7 +70,9 @@ export const ProductsPage = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-secondary-900 tracking-tight">Products</h1>
-            <p className="text-secondary-500 mt-1">Browse our entire collection</p>
+            <p className="text-secondary-500 mt-1">
+              {totalCount > 0 ? `${totalCount} product${totalCount !== 1 ? 's' : ''} found` : 'Browse our entire collection'}
+            </p>
           </div>
           <div className="w-full md:w-96">
             <SearchBar 

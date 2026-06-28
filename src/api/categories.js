@@ -5,7 +5,10 @@ import { client } from './client';
 
 export const fetchCategories = async () => {
   const response = await client.get('/categories');
-  return response.data?.data || response.data;
+  // API returns: { success: true, data: [...], pagination: {...} }
+  const categories = response.data?.data || response.data;
+  // Ensure we always return an array
+  return Array.isArray(categories) ? categories : [];
 };
 
 // --- TanStack Query Hooks ---
@@ -18,4 +21,3 @@ export const useCategories = () => {
     staleTime: 24 * 60 * 60 * 1000, 
   });
 };
-

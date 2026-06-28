@@ -50,22 +50,22 @@ export const fetchProducts = async ({ category, limit, sort, page, search } = {}
 
   const response = await client.get(url, { params });
   
-  // The Ecomus API format is: { success: true, data: { all: [...], total: number } }
-  // or it could be a direct array during transition.
+  // Ecomus API: { success, data: { all: [...], grouped: {...}, pagination: { page, limit, total, pages } } }
   const apiData = response.data?.data;
+  const pagination = apiData?.pagination || response.data?.pagination;
   const rawProducts = Array.isArray(response.data) 
     ? response.data 
     : (apiData?.all || response.data?.results || []);
   
   const normalized = rawProducts.map(normalizeProduct);
   
-  const total = apiData?.total || response.data?.total || normalized.length;
-  const itemsPerPage = limit || 24;
-  const totalPages = Math.ceil(total / itemsPerPage);
+  const totalPages = pagination?.pages || Math.ceil((pagination?.total || normalized.length) / (limit || 24));
 
   return {
     results: normalized,
-    totalPages: totalPages
+    totalPages,
+    currentPage: pagination?.page || page || 1,
+    total: pagination?.total || normalized.length,
   };
 };
 
