@@ -35,7 +35,7 @@ export const Layout = () => {
             
             {/* Logo */}
             <div className="flex-shrink-0 flex items-center">
-              <Link to="/" className="text-2xl font-bold text-primary-600 tracking-tight">
+              <Link to="/" className="text-2xl font-bold text-primary-400 tracking-tight">
                 E-Comus
               </Link>
             </div>
@@ -49,7 +49,7 @@ export const Layout = () => {
                   className={({ isActive }) =>
                     `text-sm font-medium transition-colors ${
                       isActive 
-                        ? 'text-primary-600' 
+                        ? 'text-primary-400' 
                         : 'text-secondary-600 hover:text-primary-500'
                     }`
                   }
@@ -68,7 +68,7 @@ export const Layout = () => {
               <Link to="/cart" className="relative text-secondary-600 hover:text-primary-500 transition-colors">
                 <FiShoppingCart className="w-5 h-5" />
                 {cartItemCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-primary-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                  <span className="absolute -top-2 -right-2 bg-primary-400 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                     {cartItemCount}
                   </span>
                 )}
@@ -105,7 +105,7 @@ export const Layout = () => {
                   className={({ isActive }) =>
                     `block px-3 py-2 rounded-md text-base font-medium ${
                       isActive
-                        ? 'bg-primary-50 text-primary-700'
+                        ? 'bg-primary-50 text-primary-400'
                         : 'text-secondary-600 hover:bg-secondary-50 hover:text-secondary-900'
                     }`
                   }
@@ -119,7 +119,7 @@ export const Layout = () => {
                 className={({ isActive }) =>
                   `block px-3 py-2 rounded-md text-base font-medium ${
                     isActive
-                      ? 'bg-primary-50 text-primary-700'
+                      ? 'bg-primary-50 text-primary-400'
                       : 'text-secondary-600 hover:bg-secondary-50 hover:text-secondary-900'
                   }`
                 }
@@ -132,14 +132,14 @@ export const Layout = () => {
                 className={({ isActive }) =>
                   `block px-3 py-2 rounded-md text-base font-medium flex justify-between items-center ${
                     isActive
-                      ? 'bg-primary-50 text-primary-700'
+                      ? 'bg-primary-50 text-primary-400'
                       : 'text-secondary-600 hover:bg-secondary-50 hover:text-secondary-900'
                   }`
                 }
               >
                 <span>Cart</span>
                 {cartItemCount > 0 && (
-                  <span className="bg-primary-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                  <span className="bg-primary-400 text-white text-xs font-bold px-2 py-0.5 rounded-full">
                     {cartItemCount}
                   </span>
                 )}

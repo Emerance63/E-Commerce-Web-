@@ -56,7 +56,7 @@ export const HomePage = () => {
           </div>
           <Link
             to="/products"
-            className="text-primary-600 hover:text-primary-700 font-medium flex items-center group"
+            className="text-primary-600 hover:text-primary-800 font-medium flex items-center group"
           >
             View All{" "}
             <FiArrowRight className="ml-1 w-4 h-4 transform group-hover:translate-x-1 transition-transform" />

@@ -49,7 +49,7 @@ const emptyCart = () => normalizeCart({ items: [], total: 0, itemCount: 0 });
 export const fetchCart = async () => {
   const userId = await ensureUser();
   const response = await client.get('/cart', { params: { userId } });
-  const cart = response.data?.data?.cart;
+  const cart = response.data?.data?.cart || response.data?.data;
   return cart ? normalizeCart(cart) : emptyCart();
 };
 
@@ -64,7 +64,7 @@ export const addToCart = async ({ productId, quantity, variantId }) => {
     quantity: Math.max(1, Number(quantity || 1)),
   });
 
-  return normalizeCart(response.data?.data?.cart);
+  return normalizeCart(response.data?.data?.cart || response.data?.data);
 };
 
 export const updateCartItem = async ({ itemId, quantity }) => {
@@ -74,7 +74,7 @@ export const updateCartItem = async ({ itemId, quantity }) => {
     quantity: Math.max(1, Number(quantity || 1)),
   });
 
-  return normalizeCart(response.data?.data?.cart);
+  return normalizeCart(response.data?.data?.cart || response.data?.data);
 };
 
 export const removeCartItem = async (itemId) => {
@@ -83,7 +83,7 @@ export const removeCartItem = async (itemId) => {
     params: { userId },
   });
 
-  return normalizeCart(response.data?.data?.cart);
+  return normalizeCart(response.data?.data?.cart || response.data?.data);
 };
 
 export const clearCart = async () => {

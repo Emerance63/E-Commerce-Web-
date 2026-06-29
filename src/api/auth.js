@@ -12,11 +12,31 @@ export const getStoredToken = () => localStorage.getItem(TOKEN_KEY);
 
 export const getStoredEmail = () => localStorage.getItem(EMAIL_KEY);
 
-/** Register + login a guest user; returns a valid MongoDB ObjectId for cart/orders. */
-export const ensureUser = async () => {
+/** Clear all stored credentials so a fresh registration will happen on next ensureUser() call. */
+export const clearStoredUser = () => {
+  localStorage.removeItem(USER_ID_KEY);
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(EMAIL_KEY);
+  ensureUserPromise = null;
+};
+
+/**
+ * Register + login a guest user; returns a valid MongoDB ObjectId for cart/orders.
+ * @param {boolean} forceNew — if true, clears any stored credentials and registers a fresh user.
+ */
+export const ensureUser = async (forceNew = false) => {
+  if (forceNew) {
+    clearStoredUser();
+  }
+
   const storedId = getStoredUserId();
   if (storedId && /^[a-f0-9]{24}$/i.test(storedId)) {
     return storedId;
+  }
+
+  // Clear any invalid stored ID so a fresh registration can happen
+  if (storedId) {
+    clearStoredUser();
   }
 
   if (ensureUserPromise) return ensureUserPromise;
@@ -32,16 +52,20 @@ export const ensureUser = async () => {
     });
 
     const loginRes = await client.post('/users/login', { email, password });
-    const user = loginRes.data?.data?.user;
-    const token = loginRes.data?.data?.token;
 
-    if (!user?.id) throw new Error('Failed to create guest account');
+    // Handle multiple possible API response shapes
+    const resData = loginRes.data?.data || loginRes.data;
+    const user = resData?.user || resData;
+    const token = resData?.token || loginRes.data?.token;
+    const userId = user?.id || user?._id;
 
-    localStorage.setItem(USER_ID_KEY, user.id);
+    if (!userId) throw new Error('Failed to create guest account');
+
+    localStorage.setItem(USER_ID_KEY, userId);
     localStorage.setItem(EMAIL_KEY, email);
     if (token) localStorage.setItem(TOKEN_KEY, token);
 
-    return user.id;
+    return userId;
   })();
 
   try {
